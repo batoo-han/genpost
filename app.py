@@ -11,11 +11,11 @@ app = FastAPI()
 
 # Получаем API ключи из переменных окружения
 openai.api_key = os.getenv("OPENAI_API_KEY")  # Устанавливаем ключ OpenAI из переменной окружения
-currentsapi_key = os.getenv("CURRENTS_API_KEY")  # Устанавливаем ключ Currents API из переменной окружения
+currentsapi_key = os.getenv("NEWSAPI_KEY")  # Устанавливаем ключ Currents API из переменной окружения
 
 # Проверяем, что оба API ключа заданы, иначе выбрасываем ошибку
 if not openai.api_key or not currentsapi_key:
-    raise ValueError("Переменные окружения OPENAI_API_KEY и CURRENTS_API_KEY должны быть установлены")
+    raise ValueError("Переменные окружения OPENAI_API_KEY и NEWSAPI_KEY должны быть установлены")
 
 
 class Topic(BaseModel):
