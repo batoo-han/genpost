@@ -1,7 +1,7 @@
 fastapi
 uvicorn
 pydantic
-openai
+openai==0.27
 requests
 httpx
 tiktoken
