@@ -3,6 +3,9 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import openai
 import requests
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = FastAPI()
 
