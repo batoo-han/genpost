@@ -73,7 +73,7 @@ def generate_content(topic: str):
                 "role": "user",
                 "content": f"Придумайте привлекательный и точный заголовок для статьи на тему '{topic}', с учётом актуальных новостей:\n{recent_news}. Заголовок должен быть интересным и ясно передавать суть темы."
             }],
-            max_tokens=30,
+            max_tokens=20,
             temperature=0.5,
             stop=["\n"]
         )
@@ -87,7 +87,7 @@ def generate_content(topic: str):
                 "role": "user",
                 "content": f"Напишите мета-описание для статьи с заголовком: '{title}'. Оно должно быть полным, информативным и содержать основные ключевые слова."
             }],
-            max_tokens=100,
+            max_tokens=60,
             temperature=0.5,
             stop=["."]
         )
