@@ -6,3 +6,4 @@ requests
 httpx
 tiktoken
 python-dotenv
+currentsapi
