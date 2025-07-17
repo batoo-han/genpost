@@ -1,27 +1,22 @@
 import os
-import logging
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+import requests
 from dotenv import load_dotenv
 from openai import OpenAI
-from currentsapi import CurrentsAPI
 
 load_dotenv()
 
-# Логирование
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
-
 app = FastAPI()
 
+# Инициализация клиента OpenAI с ключом из переменных окружения
 openai_api_key = os.getenv("OPENAI_API_KEY")
 currentsapi_key = os.getenv("CURRENTS_API_KEY")
 
 if not openai_api_key or not currentsapi_key:
-    logging.error("Не заданы ключи OPENAI_API_KEY/CURRENTS_API_KEY!")
-    raise ValueError("Установите ключи OPENAI_API_KEY и CURRENTS_API_KEY")
+    raise ValueError("Переменные окружения OPENAI_API_KEY и CURRENTS_API_KEY должны быть установлены")
 
 client = OpenAI(api_key=openai_api_key)
-news_client = CurrentsAPI(api_key=currentsapi_key)
 
 
 class Topic(BaseModel):
@@ -29,24 +24,26 @@ class Topic(BaseModel):
 
 
 def get_recent_news(topic: str):
-    logging.info(f"Запрос новостей через currentsapi-python по теме: {topic}")
-    try:
-        news_data = news_client.latest_news(language='ru', keywords=topic)
-        news_list = news_data.get("news", [])
-        if not news_list:
-            logging.warning("Свежих новостей не найдено через CurrentsAPI!")
-            return "Свежих новостей не найдено."
-        titles = [article.get("title", "") for article in news_list[:5]]
-        logging.info(f"Получено {len(titles)} новостей: {titles}")
-        return "\n".join(titles)
-    except Exception as e:
-        logging.error(f"Ошибка CurrentsAPI: {e}")
-        return "Свежих новостей не найдено: ошибка CurrentsAPI."
+    url = "https://api.currentsapi.services/v1/latest-news"
+    params = {
+        "language": "ru",
+        "keywords": topic,
+        "apiKey": currentsapi_key
+    }
+    response = requests.get(url, params=params)
+    if response.status_code != 200:
+        raise HTTPException(status_code=500, detail=f"Ошибка при получении данных: {response.text}")
+
+    news_data = response.json().get("news", [])
+    if not news_data:
+        return "Свежих новостей не найдено."
+
+    return "\n".join([article["title"] for article in news_data[:5]])
 
 
 def generate_content(topic: str):
-    logging.info(f"Генерация контента по теме: {topic}")
     recent_news = get_recent_news(topic)
+
     try:
         # Генерация заголовка
         title_resp = client.chat.completions.create(
@@ -74,7 +71,7 @@ def generate_content(topic: str):
         )
         meta_description = meta_resp.choices[0].message.content.strip()
 
-        # Генерация полного текста статьи
+        # Генерация полного контента статьи
         content_resp = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[{
@@ -105,7 +102,6 @@ def generate_content(topic: str):
         }
 
     except Exception as e:
-        logging.error(f"Ошибка генерации контента: {e}")
         raise HTTPException(status_code=500, detail=f"Ошибка при генерации контента: {str(e)}")
 
 
@@ -126,7 +122,5 @@ async def heartbeat_api():
 
 if __name__ == "__main__":
     import uvicorn
-
-    # Запуск приложения с указанием порта
-    port = int(os.getenv("PORT", 8000))
+    port = int(os.getenv("PORT", 8081))
     uvicorn.run("app:app", host="0.0.0.0", port=port)
